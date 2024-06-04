@@ -30,6 +30,7 @@ contract GranolaJar is IGranolaJar, Initializable {
     }
 
     function delegate(address delegatee) external {
+        // TODO: allow only Granola delegator to call this
         INounsToken(nounsToken).delegate(delegatee);
     }
 }
