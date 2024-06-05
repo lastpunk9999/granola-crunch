@@ -40,7 +40,7 @@ contract GranolaDelegator {
 
     function withdraw(uint256[] calldata tokenIds) external {
         for (uint256 i; i < tokenIds.length; ++i) {
-            address jar = Clones.predictDeterministicAddress(jarImplementation, salt(tokenIds[i]));
+            address jar = getJar(tokenIds[i]);
             require(ownerOf[tokenIds[i]] == msg.sender, "not owner");
             ownerOf[tokenIds[i]] = address(0);
             INounsToken(nounsToken).transferFrom(jar, msg.sender, tokenIds[i]);
@@ -53,6 +53,10 @@ contract GranolaDelegator {
             address jar = Clones.predictDeterministicAddress(jarImplementation, salt(tokenIds[i]));
             IGranolaJar(jar).delegate(delegatee);
         }
+    }
+
+    function getJar(uint256 tokenId) public view returns (address) {
+        return Clones.predictDeterministicAddress(jarImplementation, salt(tokenId));
     }
 
     function salt(uint256 tokenId) internal pure returns (bytes32) {

@@ -91,6 +91,14 @@ contract DepositedStateTest is DepositedState {
         vm.expectRevert("not owner");
         granola.delegate(tokenIds, delegate1);
     }
+
+    function test_nonGranolaCantCallDelegateOnJar() public {
+        vm.startPrank(makeAddr("rando"));
+        address jar = granola.getJar(1);
+
+        vm.expectRevert("only granola");
+        GranolaJar(jar).delegate(address(5));
+    }
 }
 
 contract NounsMock is ERC721Votes {

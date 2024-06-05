@@ -21,8 +21,10 @@ import {INounsToken} from "src/interfaces/INounsToken.sol";
 
 contract GranolaJar is IGranolaJar, Initializable {
     address public nounsToken;
+    address public granola;
 
     function initialize(address delegatee, address nounsToken_) external initializer {
+        granola = msg.sender;
         nounsToken = nounsToken_;
 
         INounsToken(nounsToken_).setApprovalForAll(msg.sender, true);
@@ -30,7 +32,7 @@ contract GranolaJar is IGranolaJar, Initializable {
     }
 
     function delegate(address delegatee) external {
-        // TODO: allow only Granola delegator to call this
+        require(msg.sender == granola, "only granola");
         INounsToken(nounsToken).delegate(delegatee);
     }
 }
