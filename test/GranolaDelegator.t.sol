@@ -13,10 +13,13 @@ contract ApprovedTransfersState is Test {
     NounsMock nounsToken;
     uint256[] tokenIds;
     address[] delegatees;
+    address[] admins;
     address nouner = makeAddr("nouner");
     address nouner2 = makeAddr("nouner2");
     address delegate1 = makeAddr("delegate1");
     address delegate2 = makeAddr("delegate2");
+    address admin1 = makeAddr("admin1");
+    address admin2 = makeAddr("admin2");
 
     function setUp() public virtual {
         nounsToken = new NounsMock();
@@ -38,17 +41,22 @@ contract ApprovedTransfersStateTest is ApprovedTransfersState {
 
         tokenIds = [1, 2];
         delegatees = [delegate1, delegate1];
-        granola.depositAndDelegate(tokenIds, delegatees);
+        admins = [admin1, admin2];
+        granola.depositAndDelegate(tokenIds, delegatees, admins);
 
         tokenIds = [3];
         delegatees = [delegate2];
-        granola.depositAndDelegate(tokenIds, delegatees);
+        admins = [admin2];
+        granola.depositAndDelegate(tokenIds, delegatees, admins);
 
         assertEq(nounsToken.getVotes(delegate1), 2);
         assertEq(nounsToken.getVotes(delegate2), 1);
         assertEq(granola.ownerOf(1), nouner);
         assertEq(granola.ownerOf(2), nouner);
         assertEq(granola.ownerOf(3), nouner);
+        assertEq(granola.adminOf(1), admin1);
+        assertEq(granola.adminOf(2), admin2);
+        assertEq(granola.adminOf(3), admin2);
     }
 }
 
@@ -59,11 +67,13 @@ contract DepositedState is ApprovedTransfersState {
 
         tokenIds = [1, 2];
         delegatees = [delegate1, delegate1];
-        granola.depositAndDelegate(tokenIds, delegatees);
+        admins = [admin1, admin2];
+        granola.depositAndDelegate(tokenIds, delegatees, admins);
 
         tokenIds = [3];
         delegatees = [delegate2];
-        granola.depositAndDelegate(tokenIds, delegatees);
+        admins = [admin2];
+        granola.depositAndDelegate(tokenIds, delegatees, admins);
     }
 }
 
@@ -79,6 +89,9 @@ contract DepositedStateTest is DepositedState {
         assertEq(granola.ownerOf(1), address(0));
         assertEq(granola.ownerOf(2), nouner);
         assertEq(granola.ownerOf(3), address(0));
+        assertEq(granola.adminOf(1), address(0));
+        assertEq(granola.adminOf(2), admin2);
+        assertEq(granola.adminOf(3), address(0));
     }
 
     function test_nonOwnerCantWithdraw() public {
@@ -97,10 +110,10 @@ contract DepositedStateTest is DepositedState {
         assertEq(nounsToken.getVotes(delegate2), 0);
     }
 
-    function test_nonOwnerCanDelegate() public {
+    function test_onlyOwnerOrAdminCanDelegate() public {
         vm.startPrank(makeAddr("rando"));
         tokenIds = [3];
-        vm.expectRevert("not owner");
+        vm.expectRevert("not owner or admin");
         granola.delegate(tokenIds, delegate1);
     }
 
@@ -121,7 +134,7 @@ contract DepositedStateTest is DepositedState {
         tokenIds = [1];
         delegatees = [delegate2];
         nounsToken.setApprovalForAll(address(granola), true);
-        granola.depositAndDelegate(tokenIds, delegatees);
+        granola.depositAndDelegate(tokenIds, delegatees, admins);
         assertEq(nounsToken.getVotes(delegate2), 1);
 
         // Transfer token 3 to nouner2
@@ -132,8 +145,22 @@ contract DepositedStateTest is DepositedState {
         tokenIds = [3];
         delegatees = [delegate2];
         nounsToken.setApprovalForAll(address(granola), true);
-        granola.depositAndDelegate(tokenIds, delegatees);
+        granola.depositAndDelegate(tokenIds, delegatees, admins);
         assertEq(nounsToken.getVotes(delegate2), 2);
+    }
+
+    function test_changeAdmin() public {
+        vm.startPrank(nouner);
+        tokenIds = [1, 3];
+        granola.setAdmin(tokenIds, nouner2);
+        assertEq(granola.adminOf(1), nouner2);
+        assertEq(granola.adminOf(3), nouner2);
+    }
+    function test_onlyOwnerCanChangeAdmin() public {
+        vm.startPrank(admin1);
+        tokenIds = [1, 3];
+        vm.expectRevert("not owner");
+        granola.setAdmin(tokenIds, nouner2);
     }
 }
 
