@@ -99,6 +99,23 @@ contract DepositedStateTest is DepositedState {
         vm.expectRevert("only granola");
         GranolaJar(jar).delegate(address(5));
     }
+
+    function test_nounsCanBeTransferredAndRedeposited() public {
+        vm.startPrank(nouner);
+        tokenIds = [1, 3];
+        granola.withdraw(tokenIds);
+
+        tokenIds = [1];
+        nounsToken.setApprovalForAll(address(granola), true);
+        granola.depositAndDelegate(tokenIds, delegate2);
+
+        nounsToken.transferFrom(nouner, delegate1, 3);
+
+        vm.startPrank(delegate1);
+        tokenIds = [3];
+        nounsToken.setApprovalForAll(address(granola), true);
+        granola.depositAndDelegate(tokenIds, delegate2);
+    }
 }
 
 contract NounsMock is ERC721Votes {
