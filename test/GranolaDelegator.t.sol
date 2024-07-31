@@ -12,8 +12,6 @@ contract ApprovedTransfersState is Test {
     GranolaDelegator granola;
     NounsMock nounsToken;
     uint256[] tokenIds;
-    address[] delegatees;
-    address[] admins;
     address nouner = makeAddr("nouner");
     address nouner2 = makeAddr("nouner2");
     address delegate1 = makeAddr("delegate1");
@@ -40,14 +38,12 @@ contract ApprovedTransfersStateTest is ApprovedTransfersState {
         vm.startPrank(nouner);
 
         tokenIds = [1, 2];
-        delegatees = [delegate1, delegate1];
-        admins = [admin1, admin2];
-        granola.depositAndDelegate(tokenIds, delegatees, admins);
+        granola.deposit(tokenIds, admin1);
+        granola.delegate(tokenIds, delegate1);
 
         tokenIds = [3];
-        delegatees = [delegate2];
-        admins = [admin2];
-        granola.depositAndDelegate(tokenIds, delegatees, admins);
+        granola.deposit(tokenIds, admin2);
+        granola.delegate(tokenIds, delegate2);
 
         assertEq(nounsToken.getVotes(delegate1), 2);
         assertEq(nounsToken.getVotes(delegate2), 1);
@@ -55,7 +51,7 @@ contract ApprovedTransfersStateTest is ApprovedTransfersState {
         assertEq(granola.ownerOf(2), nouner);
         assertEq(granola.ownerOf(3), nouner);
         assertEq(granola.adminOf(1), admin1);
-        assertEq(granola.adminOf(2), admin2);
+        assertEq(granola.adminOf(2), admin1);
         assertEq(granola.adminOf(3), admin2);
     }
 }
@@ -66,14 +62,12 @@ contract DepositedState is ApprovedTransfersState {
         vm.startPrank(nouner);
 
         tokenIds = [1, 2];
-        delegatees = [delegate1, delegate1];
-        admins = [admin1, admin2];
-        granola.depositAndDelegate(tokenIds, delegatees, admins);
+        granola.deposit(tokenIds, admin1);
+        granola.delegate(tokenIds, delegate1);
 
         tokenIds = [3];
-        delegatees = [delegate2];
-        admins = [admin2];
-        granola.depositAndDelegate(tokenIds, delegatees, admins);
+        granola.deposit(tokenIds, admin2);
+        granola.delegate(tokenIds, delegate2);
     }
 }
 
@@ -90,7 +84,7 @@ contract DepositedStateTest is DepositedState {
         assertEq(granola.ownerOf(2), nouner);
         assertEq(granola.ownerOf(3), address(0));
         assertEq(granola.adminOf(1), address(0));
-        assertEq(granola.adminOf(2), admin2);
+        assertEq(granola.adminOf(2), admin1);
         assertEq(granola.adminOf(3), address(0));
     }
 
@@ -132,9 +126,10 @@ contract DepositedStateTest is DepositedState {
 
         // Re-deposit token 1
         tokenIds = [1];
-        delegatees = [delegate2];
         nounsToken.setApprovalForAll(address(granola), true);
-        granola.depositAndDelegate(tokenIds, delegatees, admins);
+        granola.deposit(tokenIds, admin2);
+        granola.delegate(tokenIds, delegate2);
+        assertEq(granola.adminOf(1), admin2);
         assertEq(nounsToken.getVotes(delegate2), 1);
 
         // Transfer token 3 to nouner2
@@ -143,9 +138,10 @@ contract DepositedStateTest is DepositedState {
         // Re-depost token 3 as nouner2
         vm.startPrank(nouner2);
         tokenIds = [3];
-        delegatees = [delegate2];
         nounsToken.setApprovalForAll(address(granola), true);
-        granola.depositAndDelegate(tokenIds, delegatees, admins);
+        granola.deposit(tokenIds, admin1);
+        granola.delegate(tokenIds, delegate2);
+        assertEq(granola.adminOf(3), admin1);
         assertEq(nounsToken.getVotes(delegate2), 2);
     }
 
