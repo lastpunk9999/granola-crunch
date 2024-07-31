@@ -18,6 +18,8 @@ contract ApprovedTransfersState is Test {
     address delegate2 = makeAddr("delegate2");
     address admin1 = makeAddr("admin1");
     address admin2 = makeAddr("admin2");
+    address manager1 = makeAddr("manager1");
+    address manager2 = makeAddr("manager2");
 
     function setUp() public virtual {
         nounsToken = new NounsMock();
@@ -107,7 +109,7 @@ contract DepositedStateTest is DepositedState {
     function test_onlyOwnerOrAdminCanDelegate() public {
         vm.startPrank(makeAddr("rando"));
         tokenIds = [3];
-        vm.expectRevert("not owner or admin");
+        vm.expectRevert("not owner, admin, or manager");
         granola.delegate(tokenIds, delegate1);
     }
 
@@ -152,11 +154,52 @@ contract DepositedStateTest is DepositedState {
         assertEq(granola.adminOf(1), nouner2);
         assertEq(granola.adminOf(3), nouner2);
     }
+
+    function test_adminCanDelegate() public {
+        vm.startPrank(admin1);
+        tokenIds = [1, 2];
+        granola.delegate(tokenIds, admin2);
+        assertEq(nounsToken.getVotes(admin2), 2);
+    }
+
+    function test_managerCanDelegate() public {
+        vm.startPrank(nouner);
+        tokenIds = [1, 2];
+        granola.setManager(tokenIds, manager1);
+        vm.startPrank(manager1);
+        granola.delegate(tokenIds, manager2);
+        assertEq(nounsToken.getVotes(manager2), 2);
+    }
+
     function test_onlyOwnerCanChangeAdmin() public {
         vm.startPrank(admin1);
         tokenIds = [1, 3];
         vm.expectRevert("not owner");
         granola.setAdmin(tokenIds, nouner2);
+    }
+
+    function test_onlyOwnerAndAdminCanChangeManager() public {
+        vm.startPrank(nouner);
+        tokenIds = [1, 2];
+        granola.setManager(tokenIds, manager1);
+        vm.startPrank(manager1);
+        vm.expectRevert("not owner or admin");
+        granola.setManager(tokenIds, manager2);
+    }
+
+    function test_ownerCanChangeManager() public{
+        vm.startPrank(nouner);
+        tokenIds = [1, 2];
+        granola.setManager(tokenIds, manager1);
+        assertEq(granola.managerOf(1), manager1);
+        assertEq(granola.managerOf(2), manager1);
+    }
+    function test_adminCanChangeManager() public{
+        vm.startPrank(admin1);
+        tokenIds = [1, 2];
+        granola.setManager(tokenIds, manager1);
+        assertEq(granola.managerOf(1), manager1);
+        assertEq(granola.managerOf(2), manager1);
     }
 }
 

@@ -24,6 +24,7 @@ contract GranolaDelegator {
     address public immutable jarImplementation;
     mapping(uint256 tokenId => address owner) public ownerOf;
     mapping(uint256 tokenId => address admin) public adminOf;
+    mapping(uint256 tokenId => address manager) public managerOf;
 
     constructor(address nounsToken_, address jarImplementation_) {
         nounsToken = nounsToken_;
@@ -55,7 +56,12 @@ contract GranolaDelegator {
 
     function delegate(uint256[] calldata tokenIds, address delegatee) external {
         for (uint256 i; i < tokenIds.length; ++i) {
-            require(ownerOf[tokenIds[i]] == msg.sender || adminOf[tokenIds[i]] == msg.sender, "not owner or admin");
+            require(
+                ownerOf[tokenIds[i]] == msg.sender ||
+                    adminOf[tokenIds[i]] == msg.sender ||
+                    managerOf[tokenIds[i]] == msg.sender,
+                "not owner, admin, or manager"
+            );
             address jar = Clones.predictDeterministicAddress(jarImplementation, salt(tokenIds[i]));
             IGranolaJar(jar).delegate(delegatee);
         }
@@ -65,6 +71,13 @@ contract GranolaDelegator {
         for (uint256 i; i < tokenIds.length; ++i) {
             require(ownerOf[tokenIds[i]] == msg.sender, "not owner");
             adminOf[tokenIds[i]] = newAdmin;
+        }
+    }
+
+    function setManager(uint256[] calldata tokenIds, address newManager) external {
+        for (uint256 i; i < tokenIds.length; ++i) {
+            require(ownerOf[tokenIds[i]] == msg.sender || adminOf[tokenIds[i]] == msg.sender, "not owner or admin");
+            managerOf[tokenIds[i]] = newManager;
         }
     }
 
