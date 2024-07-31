@@ -29,14 +29,14 @@ contract GranolaDelegator {
         jarImplementation = jarImplementation_;
     }
 
-    function depositAndDelegate(uint256[] calldata tokenIds, address delegatee) external {
+    function depositAndDelegate(uint256[] calldata tokenIds, address[] calldata delegatees) external {
         for (uint256 i; i < tokenIds.length; ++i) {
             address jar = getJar(tokenIds[i]);
             if (jar.code.length == 0) {
                 Clones.cloneDeterministic(jarImplementation, salt(tokenIds[i]));
-                IGranolaJar(jar).initialize(delegatee, nounsToken);
+                IGranolaJar(jar).initialize(delegatees[i], nounsToken);
             } else {
-                IGranolaJar(jar).delegate(delegatee);
+                IGranolaJar(jar).delegate(delegatees[i]);
             }
             ownerOf[tokenIds[i]] = msg.sender;
             INounsToken(nounsToken).transferFrom(msg.sender, jar, tokenIds[i]);
