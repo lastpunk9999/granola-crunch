@@ -67,6 +67,9 @@ contract DepositedStateTest is DepositedState {
         assertEq(nounsToken.ownerOf(1), nouner);
         assertNotEq(nounsToken.ownerOf(2), nouner);
         assertEq(nounsToken.ownerOf(3), nouner);
+        assertEq(granola.ownerOf(1), address(0));
+        assertEq(granola.ownerOf(2), nouner);
+        assertEq(granola.ownerOf(3), address(0));
     }
 
     function test_nonOwnerCantWithdraw() public {
