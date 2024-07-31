@@ -119,7 +119,7 @@ contract DepositedStateTest is DepositedState {
         GranolaJar(jar).delegate(address(5));
     }
 
-    function test_nounsCanBeTransferredAndRedeposited() public {
+    function test_canReuseJars() public {
         vm.startPrank(nouner);
         tokenIds = [1, 3];
         granola.withdraw(tokenIds);
